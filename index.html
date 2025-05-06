@@ -13,19 +13,19 @@
             height: 100vh;
             margin: 0;
             background-color: transparent;
+            overflow: hidden;
         }
         .timer-container {
             text-align: center;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: #f7f6f3;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            min-width: 200px;
+            padding: 8px;
+            border-radius: 6px;
+            background-color: transparent;
+            width: 100%;
         }
         .timer-display {
-            font-size: 32px;
+            font-size: 18px;
             font-weight: bold;
-            margin: 10px 0;
+            margin: 0;
         }
         .overdue {
             color: #ff5c5c;
@@ -37,9 +37,7 @@
             color: #2eaadc;
         }
         .task-name {
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 16px;
+            display: none;
         }
     </style>
 </head>
@@ -54,6 +52,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const taskName = urlParams.get('task') || 'Task Timer';
         const dueDate = urlParams.get('due') || null;
+        const interval = urlParams.get('interval') || 24; // Default 24 hours
         
         // Set task name
         document.getElementById('taskName').textContent = taskName;
@@ -75,31 +74,35 @@
                 diff = Math.abs(diff);
             }
             
-            // Calculate hours, minutes, seconds
-            const hours = Math.floor(diff / (1000 * 60 * 60));
+            // Calculate days, hours, minutes, seconds
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diff % (1000 * 60)) / 1000);
             
             // Format display
-            const display = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            let display = '';
+            if (days > 0) {
+                display = `${days}d ${hours}h ${minutes}m`;
+            } else {
+                display = `${hours}h ${minutes}m ${seconds}s`;
+            }
             
             // Update display and color
             const timerDisplay = document.getElementById('timer');
             timerDisplay.textContent = isOverdue ? `⚠️ ${display}` : display;
             
             // Set color based on time remaining
+            const totalHours = interval || 24;
+            const thresholdMs = totalHours * 60 * 60 * 1000 * 0.25; // 25% of interval
+            
             if (isOverdue) {
                 timerDisplay.className = 'timer-display overdue';
-            } else if (diff < 24 * 60 * 60 * 1000 * 0.25) { // Less than 25% of time left (assuming 24h tasks)
+            } else if (diff < thresholdMs) {
                 timerDisplay.className = 'timer-display due-soon';
             } else {
                 timerDisplay.className = 'timer-display on-track';
             }
         }
         
-        // Update timer immediately and then every second
-        updateTimer();
-        setInterval(updateTimer, 1000);
-    </script>
-</body>
-</html>
+        
